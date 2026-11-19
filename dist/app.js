@@ -1,374 +1,73 @@
-"use strict";
-const main = document.querySelector("main");
-const sidebar = document.querySelector("#sidebar");
-const key = "quantum-review-23:v1";
-const chapters = { "2": "波函数与薛定谔方程", "3": "量子力学中的力学量" };
-const lessons = parse(lessonText + "\n" + observableText).map(({ header: [id, title, subtitle], fields }) => ({ id, title, subtitle, fields }));
-const questions = parse(homeworkText + "\n" + examText).map(({ header: [id, section, source, title], fields }) => ({ id, section, source, title, fields }));
-const aliases = [
-  ["e22a-11", "e20-11", "22 级期中回忆 · 版本 A", "一（1）"],
-  ["e22a-12", "e20-12", "22 级期中回忆 · 版本 A", "一（2）"],
-  ["e22a-2", "h2c10", "22 级期中回忆 · 版本 A", "二"],
-  ["e22a-32", "e20-32", "22 级期中回忆 · 版本 A", "三（2）"],
-  ["e22a-6", "e21-24", "22 级期中回忆 · 版本 A", "六"],
-  ["e22a-8", "e20-6", "22 级期中回忆 · 版本 A", "八"],
-  ["e22b-11", "h2b2", "22 级试题回忆 · 版本 B", "一（1）"],
-  ["e22b-12", "e21-11", "22 级试题回忆 · 版本 B", "一（2）"],
-  ["e22b-21", "h3-5", "22 级试题回忆 · 版本 B", "二（1）"]
-];
-for (const [id, originalId, source, number] of aliases) {
-  const original = questions.find(item => item.id === originalId);
-  questions.push({ ...original, id, source, title: number + " · " + original.title.split(" · ")[1] });
+'use strict';
+const DATA=window.REVIEW_DATA||{courses:[],questions:[],maps:{}};
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const localMode=decodeURIComponent(location.pathname).includes('/复习总览/');
+if($('#indexOpen')) $('#indexOpen').href='#';
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function rich(s){let x=esc(s).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');x=x.replace(/\$([^$\n]+)\$/g,'<span class="inline-formula">$1</span>');return x.replace(/\n/g,'<br>')}
+const courses=DATA.courses, questions=DATA.questions, maps=DATA.maps;
+const RESOURCE_MAP={};
+const assetPath=p=>'#';
+const courseById=id=>courses.find(c=>c.id===id)||courses[0];
+const chapterById=id=>{for(const c of courses){const x=c.chapters.find(ch=>ch.id===id);if(x)return {course:c,chapter:x}}return null};
+const fresh=()=>({v:2,read:{},mastered:{},mistakes:{},favorites:{},notes:{},history:[],lastCourse:'quantum'});
+let progress;try{progress=JSON.parse(localStorage.getItem('review-hub-v2'))||fresh()}catch{progress=fresh()}
+if(!progress.read||!progress.mastered||!progress.mistakes||!progress.favorites)progress=fresh();
+function save(){localStorage.setItem('review-hub-v2',JSON.stringify(progress));updateRail()}
+function isRead(id){return progress.read[id]===true}function isMastered(id){return progress.mastered[id]===true}function isMistake(id){return progress.mistakes[id]===true}function isFav(id){return progress.favorites[id]===true}
+function courseProgress(c){const ids=questions.filter(q=>q.course===c.id).map(q=>q.id);const read=c.chapters.filter(ch=>isRead(ch.id)).length;const mastered=ids.filter(isMastered).length;return {read,total:c.chapters.length,mastered,totalQ:ids.length,pct:ids.length?Math.round(mastered*100/ids.length):Math.round(read*100/c.chapters.length)}}
+function setHash(x){location.hash=x}
+function route(){const p=(location.hash.replace(/^#/,'')||'home').split('/');return {view:p[0],course:p[1]||null,chapter:p[2]||null}}
+function courseStyle(c){return `--course-color:${c.color}`}
+function updateRail(){const read=Object.values(progress.read).filter(Boolean).length,mastered=Object.values(progress.mastered).filter(Boolean).length,mistakes=Object.values(progress.mistakes).filter(Boolean).length;$('#readCount').textContent=read;$('#masteredCount').textContent=mastered;$('#mistakeBadge').textContent=mistakes;$('#courseRail').innerHTML=courses.map(c=>{const p=courseProgress(c),r=route();return `<button class="rail-course ${r.course===c.id?'active':''}" style="--course-color:${c.color}" data-course="${c.id}"><i></i><span>${esc(c.name)}</span><small>${p.pct}%</small></button>`}).join('')}
+function setActiveNav(view){$$('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.view===view))}
+function titleBlock(kicker,title,sub,action=''){return `<div class="page-top"><div><div class="eyebrow">${kicker}</div><h1>${title}</h1><p>${sub}</p></div>${action}</div>`}
+function button(label,action,cls='primary',extra=''){return `<button class="button ${cls}" data-action="${action}" ${extra}>${label}</button>`}
+function renderHome(){
+ const mastered=Object.values(progress.mastered).filter(Boolean).length, mistakes=Object.values(progress.mistakes).filter(Boolean).length, reads=Object.values(progress.read).filter(Boolean).length;
+ const avg=Math.round(courses.reduce((n,c)=>n+courseProgress(c).pct,0)/courses.length);
+ const best=courses.find(c=>courseProgress(c).pct<100)||courses[0];
+ const queue=questions.filter(q=>isMistake(q.id)).slice(0,3).concat(questions.filter(q=>!isMastered(q.id)&&!isMistake(q.id)).slice(0,3));
+ return titleBlock('REVIEW CONSOLE','把课程学进去，而不是只把文件打开。','知识卡、主动回忆、题库、错题和内置知识地图都在同一个学习空间里。')+
+ `<div class="hero"><section class="hero-copy"><div class="eyebrow">TODAY’S LEARNING LOOP</div><h2>理解一张卡，<br>再用一道题证明它。</h2><p>开卷课记住“去哪里查”；闭卷课把公式放进题目。每一次自测都会留下进度。</p>${button('开始今日练习','daily','primary')}</section><section class="hero-map"><div class="hero-orb"><div>ψ</div><span>概念</span><span>公式</span><span>题目</span></div></section></div>
+ <div class="stats"><div class="stat-card primary"><span>整体学习进度</span><strong>${avg}%</strong><small>按课程知识卡与题库计算</small></div><div class="stat-card"><span>已掌握题目</span><strong>${mastered}</strong><small>共 ${questions.length} 道</small></div><div class="stat-card"><span>待回顾错题</span><strong>${mistakes}</strong><small>下次练习优先出现</small></div><div class="stat-card"><span>已读章节</span><strong>${reads}</strong><small>共 ${courses.reduce((n,c)=>n+c.chapters.length,0)} 章</small></div></div>
+ <div class="section-head"><h2>课程进度 <span class="meta">COURSE PULSE</span></h2>${button('打开知识卡','learn','ghost')}</div><div class="course-grid">${courses.map(courseCard).join('')}</div>
+ <div class="task-grid"><section class="panel"><h3>今天，从这里开始</h3><div class="panel-label">A LITTLE, EVERY DAY</div>${queue.length?queue.map((q,i)=>`<div class="task"><span class="task-num">${String(i+1).padStart(2,'0')}</span><div><strong>${esc(q.title)}</strong><small>${esc(courseById(q.course).name)} · ${esc(q.type)}</small></div><a href="#" data-action="open-question" data-id="${q.id}">练习</a></div>`).join(''):'<div class="mistake-empty">今天还没有待回顾题目。点击“开始今日练习”从未掌握题中抽取。</div>'}</section><section class="panel"><h3>你的复习策略</h3><div class="panel-label">OPEN BOOK / CLOSED BOOK</div><div class="task"><span class="task-num">A</span><div><strong>原子核物理 · 传感器 · 广义相对论</strong><small>先点知识地图，记住查找路径，再练题。</small></div></div><div class="task"><span class="task-num">B</span><div><strong>量子力学 · 电动力学</strong><small>先读知识卡，随后用题库检验推导。</small></div></div><div class="task"><span class="task-num">C</span><div><strong>专业外语</strong><small>术语 → 句型 → 用英文解释物理。</small></div></div></section></div>`;
 }
-questions.sort((a, b) => a.id.localeCompare(b.id, "en", { numeric: true }));
-const lessonMap = new Map(lessons.map(item => [item.id, item]));
-const questionMap = new Map(questions.map(item => [item.id, item]));
-const filters = { query: "", chapter: "", source: "" };
-let state = { lessons: {}, questions: {}, last: "" };
-let storageAvailable = true;
-try {
-  const previous = JSON.parse(localStorage.getItem(key));
-  if (previous && typeof previous === "object") state = { ...state, ...previous };
-} catch {
-  storageAvailable = false;
+function courseCard(c){const p=courseProgress(c);return `<article class="course-card" style="--course-color:${c.color}"><div class="code">COURSE ${c.code} · ${c.mode}</div><h3>${esc(c.name)}</h3><div class="meta">${esc(c.credits)} · ${p.read}/${p.total} 章已读</div><p>${esc(c.summary)}</p><div class="foot"><div class="mini-bar"><i style="width:${p.pct}%"></i></div><small>${p.pct}%</small>${button('进入学习 →',`course:${c.id}`,'ghost')}</div></article>`}
+function renderLearn(courseId,chapterId){
+ const c=courseById(courseId||progress.lastCourse), detail=chapterId?chapterById(chapterId):null;
+ progress.lastCourse=c.id;save();
+ const side=`<aside class="learn-side">${courses.map(x=>`<button class="${x.id===c.id?'active':''}" data-action="select-course" data-course="${x.id}" style="--course-color:${x.color}"><strong>${esc(x.name)}</strong><small>${x.mode} · ${courseProgress(x).pct}%</small></button>`).join('')}</aside>`;
+ if(detail)return titleBlock('KNOWLEDGE CARDS',`${detail.course.name} · ${detail.chapter.title}`,detail.chapter.overview,button('返回章节目录','back-learn','ghost'))+`<div class="chapter-detail" style="--course-color:${detail.course.color}">${renderChapter(detail.course,detail.chapter)}</div>`;
+ return titleBlock('KNOWLEDGE CARDS','按章节学习','每一章都包含知识卡、公式、解题路径和主动回忆。选择一门课开始。')+`<div class="learn-layout">${side}<section><div class="course-card" style="--course-color:${c.color};min-height:auto;margin-bottom:13px"><div class="code">${esc(c.mode)}</div><h3>${esc(c.name)}</h3><p>${esc(c.summary)}</p><div class="progress"><i style="width:${courseProgress(c).pct}%"></i></div><small class="muted">${courseProgress(c).mastered}/${courseProgress(c).totalQ} 道题已掌握 · ${courseProgress(c).read}/${courseProgress(c).total} 章已读</small></div><div class="chapter-grid">${c.chapters.map((ch,i)=>chapterCard(c,ch,i)).join('')}</div></section></div>`;
 }
-
-function parse(text) {
-  return text.trim().split(/\n(?=# )/).map(record => {
-    const [heading, ...lines] = record.trim().split(/\r?\n/);
-    const fields = Object.fromEntries(lines.filter(Boolean).map(line => {
-      const separator = line.indexOf("|");
-      return [line.slice(0, separator), line.slice(separator + 1)];
-    }));
-    return { header: heading.slice(2).split("|"), fields };
-  });
+function chapterCard(c,ch,i){const qs=questions.filter(q=>q.chapterId===ch.id),done=qs.filter(q=>isMastered(q.id)).length;return `<a class="chapter-card" href="#learn/${c.id}/${ch.id}" style="--course-color:${c.color}"><div class="mini">${String(i+1).padStart(2,'0')} · ${qs.length?qs.length+' 道练习':'知识卡'}</div><h3>${esc(ch.title)}</h3><p>${esc(ch.subtitle)}</p><div class="chapter-foot"><span>${isRead(ch.id)?'✓ 已读':'待开始'}</span><span>${qs.length?done+'/'+qs.length:''}</span></div><div class="progress"><i style="width:${qs.length?done*100/qs.length:isRead(ch.id)?100:0}%"></i></div></a>`}
+function renderChapter(c,ch){
+ const qs=questions.filter(q=>q.chapterId===ch.id), tab=window.chapterTab||'cards', p=courseProgress(c);
+ const resources=RESOURCE_MAP[c.id]||[];
+ return `<div class="eyebrow">${esc(c.mode)} · ${esc(c.name)}</div><h1>${esc(ch.title)}</h1><p class="lead">${esc(ch.overview)}</p><div class="chapter-actions">${button('本章练习 '+(qs.length?qs.length+' 题':''),'chapter-practice','primary',qs.length?'':'disabled')} ${button(isRead(ch.id)?'✓ 已读章节':'标记为已读','toggle-read','secondary','data-chapter="'+ch.id+'"')} ${button('加入今日练习','add-today','ghost','data-chapter="'+ch.id+'"')}</div><div class="tabs"><button class="${tab==='cards'?'active':''}" data-action="chapter-tab" data-tab="cards">知识卡与公式</button><button class="${tab==='recall'?'active':''}" data-action="chapter-tab" data-tab="recall">主动回忆</button><button class="${tab==='path'?'active':''}" data-action="chapter-tab" data-tab="path">解题路径</button></div>${tab==='cards'?`<div class="card-stack">${ch.cards.map((x,i)=>`<article class="knowledge-card"><div class="kicker">KEY CONCEPT ${String(i+1).padStart(2,'0')}</div><h3>${esc(x.title)}</h3><p>${rich(x.body)}</p>${x.formula?`<div class="formula">${esc(x.formula)}</div>`:''}</article>`).join('')}</div>`:tab==='recall'?`<div class="panel"><h3>合上资料，再回答</h3><p class="muted">先在脑中组织答案，再展开检查。完成后可以直接进入本章题库。</p>${ch.recall.map(x=>`<details class="recall-box"><summary>${esc(x.question)}</summary><div class="answer">${rich(x.answer)}</div></details>`).join('')}</div>`:`<div class="panel"><h3>把问题拆成几步</h3><div class="path-list">${ch.steps.map(x=>`<div class="path-step"><p>${rich(x)}</p></div>`).join('')}</div><h3 style="margin-top:24px">容易混淆</h3><div class="path-list">${ch.goals.map(x=>`<div class="path-step"><p>${esc(x)}</p></div>`).join('')}</div></div>`}<div class="section-head"><h3>这一章的训练</h3><span class="muted">${qs.filter(q=>isMastered(q.id)).length}/${qs.length} 道题已掌握</span></div>${qs.length?`<div class="question-list">${qs.slice(0,5).map((q,i)=>questionCard(q,i)).join('')}</div>`:'<div class="panel muted">这一章暂以知识卡和主动回忆为主。</div>'}<div class="panel resource-panel"><h3>资料补充</h3><p class="muted">学习内容已内置；需要查原始讲义时，从这里打开对应资料。</p><div class="resource-links">${resources.map(x=>`<a class="button ghost" href="${assetPath(x[1])}" target="_blank" rel="noopener">${esc(x[0])} ↗</a>`).join('')}</div></div>`;
 }
-
-function citations(id) {
-  if (id.startsWith("h2")) {
-    const sources = ["《第二章作业.docx》", "《量子力学作业.zip》内《第二章作业.docx》"];
-    if (["h2a1", "h2a2"].includes(id)) sources.push("旧聊天《量子力学》的第一次作业记录");
-    return sources;
-  }
-  if (/^h3-(10|11|12|13)$/.test(id)) return ["旧聊天《量子力学》中的教材题图记录与题干整理"];
-  if (id.startsWith("h3")) {
-    const sources = ["《第3章作业.docx》", "《量子力学作业.zip》内《作业3.docx》"];
-    if (/^h3-(2|3|4|5|6|8|9)$/.test(id)) sources.push("旧聊天《量子力学》或《量子力学期中复习》的对应题号");
-    return sources;
-  }
-  if (id.startsWith("e20")) return ["《2020应物量子力学期中卷（已做）.docx》"];
-  if (id.startsWith("e21")) return ["《量子力学21级回忆.docx》"];
-  if (id.startsWith("e22a")) return ["《22级量子力学期中考试回忆（不完整，可能有错误，仅供参考）.docx》"];
-  return ["《量子力学22级回忆 (1).docx》"];
+function questionCard(q,i){const c=courseById(q.course);return `<article class="question-card" style="--course-color:${c.color}"><div class="q-num">${String(i+1).padStart(2,'0')}</div><div><div class="q-meta"><span class="badge">${esc(q.type)}</span><span class="badge">${esc(q.difficulty)}</span><span>${esc(c.name)}</span></div><h3>${esc(q.title)}</h3><div class="stem">${rich(q.stem)}</div><div class="q-tags">${(q.tags||[]).slice(0,4).map(t=>`<span>${esc(t)}</span>`).join('')}</div></div><div class="q-actions"><button class="icon-btn" data-action="favorite" data-id="${q.id}" title="收藏">${isFav(q.id)?'★':'☆'}</button>${button(isMastered(q.id)?'再练一次':'开始自测','open-question','secondary','data-id="'+q.id+'"')}</div></article>`}
+let bankFilter={course:'all',type:'all',status:'all',search:''};
+function renderBank(){let list=questions.filter(q=>(bankFilter.course==='all'||q.course===bankFilter.course)&&(bankFilter.type==='all'||q.type===bankFilter.type)&&(bankFilter.status==='all'||bankFilter.status==='mastered'&&isMastered(q.id)||bankFilter.status==='mistake'&&isMistake(q.id)||bankFilter.status==='new'&&!isMastered(q.id)&&!isMistake(q.id))&&(!bankFilter.search||[q.title,q.stem,(q.tags||[]).join(' '),courseById(q.course).name].join(' ').toLowerCase().includes(bankFilter.search.toLowerCase())));return titleBlock('QUESTION BANK','题库练习','每道题先自己回答，再打开参考解答；主观题通过自评进入掌握或错题。',button('随机练习10题','random-practice','primary'))+`<div class="filters"><input id="bankSearch" placeholder="搜索题目、知识点或课程" value="${esc(bankFilter.search)}"><select id="bankCourse"><option value="all">全部课程</option>${courses.map(c=>`<option value="${c.id}" ${bankFilter.course===c.id?'selected':''}>${esc(c.name)}</option>`).join('')}</select><select id="bankType"><option value="all">全部题型</option>${['概念题','计算题','证明题','简答题'].map(x=>`<option ${bankFilter.type===x?'selected':''}>${x}</option>`).join('')}</select><select id="bankStatus"><option value="all">全部状态</option><option value="new" ${bankFilter.status==='new'?'selected':''}>待练习</option><option value="mastered" ${bankFilter.status==='mastered'?'selected':''}>已掌握</option><option value="mistake" ${bankFilter.status==='mistake'?'selected':''}>错题</option></select></div><div class="bank-toolbar"><span>共 ${list.length} 道题</span><span>答案在自测后展开</span></div><div class="question-list">${list.slice(0,50).map(questionCard).join('')||'<div class="mistake-empty">没有匹配题目。</div>'}</div>`}
+function renderMaps(courseId){const id=courseId||'nuclear',m=maps[id],c=courseById(id);window.mapSelection=window.mapSelection||{};const selected=window.mapSelection[id]||m.nodes[0];return titleBlock('IN-SITE MIND MAP','知识地图','地图节点直接连接到站内知识卡；不需要离开网站查文件。')+`<div class="map-layout"><aside class="map-tabs">${Object.keys(maps).map(k=>`<button class="map-tab ${k===id?'active':''}" data-action="map-course" data-course="${k}"><strong>${esc(maps[k].title)}</strong><small>${esc(maps[k].subtitle)}</small></button>`).join('')}</aside><section class="map-board" style="--course-color:${c.color}"><div class="eyebrow">${esc(c.mode)}</div><h1>${esc(m.title)}</h1><p class="subtitle">${esc(m.subtitle)}</p><div class="map-nodes"><button class="map-node core"><strong>${esc(c.name)} · 复习主轴</strong><span>点击下面节点，把知识树变成学习顺序</span></button>${m.nodes.map(n=>`<button class="map-node ${selected.chapterId===n.chapterId?'selected':''}" data-action="map-node" data-course="${id}" data-chapter="${n.chapterId}"><strong>${esc(n.label)}</strong><span>${esc(n.detail)}</span></button>`).join('')}</div><div class="map-detail"><strong>${esc(selected.label)}</strong><br>${esc(selected.detail)}<div class="chapter-actions">${button('进入这一节点的知识卡','map-learn','primary','data-course="'+id+'" data-chapter="'+selected.chapterId+'"')} ${button('抽 3 道相关题','map-practice','secondary','data-course="'+id+'" data-chapter="'+selected.chapterId+'"')}</div></div></section></div>`}
+function renderMistakes(){const list=questions.filter(q=>isMistake(q.id));return titleBlock('REVIEW AGAIN','错题本','这里不是惩罚区，而是下一轮学习的起点。每道错题都能重新自测。',list.length?button('随机回顾','mistake-practice','primary'):'')+`<div class="question-list">${list.map(questionCard).join('')||'<div class="mistake-empty"><h3>还没有错题</h3><p>在题库里完成一次“需要巩固”的自评，它就会出现在这里。</p></div>'}</div>`}
+function renderEnglish(){const p=localMode?'../07_英语/学习站/index.html':'./english.html';return titleBlock('ENGLISH WORKBENCH','英语学习站','原有刷题、听力、词汇、翻译、口语、作文与批注功能保留在这里。',`<a class="button primary" href="${p}" target="_blank">新窗口打开 ↗</a>`)+`<div class="english-shell"><iframe title="英语学习站" src="${p}"></iframe></div><div class="panel" style="margin-top:12px;color:var(--muted);font-size:12px">PDF 按页批注需要运行统一启动脚本；它会同时提供英语站需要的预览接口。</div>`}
+function render(){const r=route();setActiveNav(['home','learn','bank','maps','mistakes','english'].includes(r.view)?r.view:'home');updateRail();let html=r.view==='learn'?renderLearn(r.course,r.chapter):r.view==='bank'?renderBank():r.view==='maps'?renderMaps(r.course):r.view==='mistakes'?renderMistakes():r.view==='english'?renderEnglish():renderHome();$('#app').innerHTML=html;bindDynamic();}
+function openPractice(queue){window.practice={queue:queue.filter(Boolean),index:0,revealed:false,score:0};const d=$('#practiceDialog');d.className='dialog';if(d.showModal)d.showModal();else d.setAttribute('open','');renderPractice()}
+function closePractice(){const d=$('#practiceDialog');if(d.close)d.close();else d.removeAttribute('open');window.practice=null}
+function renderPractice(){const p=window.practice;if(!p)return;const d=$('#practiceDialog');if(p.index>=p.queue.length){d.innerHTML=`<div class="dialog-inner"><div class="dialog-top"><span class="eyebrow">PRACTICE COMPLETE</span><button class="icon-btn" data-action="close-practice">×</button></div><h2 id="practiceTitle">这一轮完成了。</h2><p class="stem">${p.score}/${p.queue.length} 道自评为“已掌握”。错题会自动留在错题本。</p><div class="dialog-actions">${button('继续练习','daily','primary')} ${button('回到学习空间','close-practice','secondary')}</div></div>`;return}const q=p.queue[p.index],c=courseById(q.course),st=isMastered(q.id);d.innerHTML=`<div class="dialog-inner" style="--course-color:${c.color}"><div class="dialog-top"><span class="eyebrow">${esc(c.name)} · ${p.index+1}/${p.queue.length}</span><button class="icon-btn" data-action="close-practice">×</button></div><h2 id="practiceTitle">${esc(q.title)}</h2><div class="q-meta"><span class="badge">${esc(q.type)}</span><span class="badge">${esc(q.difficulty)}</span><span>${esc((q.tags||[]).join(' · '))}</span></div><div class="stem">${rich(q.stem)}</div><textarea class="note" id="practiceNote" placeholder="先写下你的思路、公式或英文答案…">${esc(progress.notes[q.id]||'')}</textarea>${p.revealed?`<div class="answer-reveal"><strong>参考解答</strong><p>${rich(q.answer)}</p></div>`:''}<div class="dialog-actions">${!p.revealed?button('查看参考解答','reveal-answer','primary'):''}${p.revealed?button('我已掌握','grade-good','primary'):''}${p.revealed?button('还需巩固','grade-bad','secondary'):''}${button('跳过','skip-question','ghost')}</div></div>`}
+function record(correct){const p=window.practice,q=p.queue[p.index];if(correct){progress.mastered[q.id]=true;delete progress.mistakes[q.id];p.score++}else{progress.mistakes[q.id]=true;delete progress.mastered[q.id]}progress.history.push({id:q.id,correct,time:new Date().toISOString()});if(progress.history.length>500)progress.history=progress.history.slice(-500);save();p.index++;p.revealed=false;renderPractice();render()}
+function bindDynamic(){
+ $$('[data-action]').forEach(b=>b.onclick=e=>{const a=b.dataset.action;if(a==='course'){setHash('#learn/'+b.dataset.course)}else if(a==='select-course'){setHash('#learn/'+b.dataset.course)}else if(a==='learn'){setHash('#learn')}else if(a==='back-learn'){setHash('#learn/'+progress.lastCourse)}else if(a==='daily'){const q=questions.filter(x=>isMistake(x.id)).slice(0,3).concat(questions.filter(x=>!isMastered(x.id)&&!isMistake(x.id)).slice(0,7));openPractice(q.length?q:questions.slice(0,10))}else if(a==='open-question'){e.preventDefault();openPractice([questions.find(q=>q.id===b.dataset.id)])}else if(a==='favorite'){progress.favorites[b.dataset.id]=!isFav(b.dataset.id);save();render()}else if(a==='chapter-tab'){window.chapterTab=b.dataset.tab;render()}else if(a==='toggle-read'){progress.read[b.dataset.chapter]=!isRead(b.dataset.chapter);save();render()}else if(a==='add-today'){const q=questions.find(x=>x.chapterId===b.dataset.chapter);if(q){progress.mistakes[q.id]=true;save();render();}}else if(a==='chapter-practice'){const r=route();const q=questions.filter(x=>x.chapterId===r.chapter);openPractice(q)}else if(a==='random-practice'){openPractice([...questions].sort(()=>Math.random()-.5).slice(0,10))}else if(a==='map-course'){setHash('#maps/'+b.dataset.course)}else if(a==='map-node'){const m=maps[b.dataset.course];window.mapSelection[b.dataset.course]=m.nodes.find(n=>n.chapterId===b.dataset.chapter);render()}else if(a==='map-learn'){setHash('#learn/'+b.dataset.course+'/'+b.dataset.chapter)}else if(a==='map-practice'){openPractice(questions.filter(q=>q.chapterId===b.dataset.chapter).slice(0,3))}else if(a==='mistake-practice'){openPractice(questions.filter(q=>isMistake(q.id)))}else if(a==='reveal-answer'){window.practice.revealed=true;renderPractice()}else if(a==='grade-good'){record(true)}else if(a==='grade-bad'){record(false)}else if(a==='skip-question'){window.practice.index++;window.practice.revealed=false;renderPractice()}else if(a==='close-practice'){closePractice()}});
+ $$('[data-course]').filter(x=>x.dataset.action===undefined).forEach(b=>b.onclick=()=>setHash('#learn/'+b.dataset.course));
+ const bs=$('#bankSearch');if(bs)bs.oninput=()=>{bankFilter.search=bs.value;render()};const bc=$('#bankCourse');if(bc)bc.onchange=()=>{bankFilter.course=bc.value;render()};const bt=$('#bankType');if(bt)bt.onchange=()=>{bankFilter.type=bt.value;render()};const bstatus=$('#bankStatus');if(bstatus)bstatus.onchange=()=>{bankFilter.status=bstatus.value;render()};
+ const note=$('#practiceNote');if(note)note.oninput=()=>{const q=window.practice.queue[window.practice.index];progress.notes[q.id]=note.value;save()};
 }
-
-function save() {
-  try {
-    localStorage.setItem(key, JSON.stringify(state));
-    return true;
-  } catch {
-    storageAvailable = false;
-    return false;
-  }
-}
-
-function escape(value) {
-  const characters = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
-  return String(value ?? "").replace(/[&<>"']/g, character => characters[character]);
-}
-
-function format(value) {
-  return String(value ?? "").split(/(\$\$[\s\S]*?\$\$|\$[^$\n]+\$)/g).map((part, index) => {
-    if (index % 2 === 0) return escape(part);
-    const displayMode = part.startsWith("$$");
-    const marker = displayMode ? 2 : 1;
-    return '<span class="math-token">' + katex.renderToString(part.slice(marker, -marker), {
-      displayMode, strict: "ignore", throwOnError: false, output: "htmlAndMathml"
-    }) + "</span>";
-  }).join("");
-}
-
-function fieldsOutsideMath(value) {
-  const parts = [""];
-  for (const [index, token] of value.split(/(\$[^$\n]+\$)/g).entries()) {
-    if (index % 2) {
-      parts[parts.length - 1] += token;
-    } else {
-      const [first, ...rest] = token.split("|");
-      parts[parts.length - 1] += first;
-      parts.push(...rest);
-    }
-  }
-  return parts;
-}
-
-function explanation(value) {
-  const sentences = [""];
-  for (const [index, token] of value.split(/(\$[^$\n]+\$)/g).entries()) {
-    if (index % 2) {
-      sentences[sentences.length - 1] += token;
-    } else {
-      const [first, ...rest] = token.split(/(?<=。)/);
-      sentences[sentences.length - 1] += first;
-      sentences.push(...rest);
-    }
-  }
-  const paragraphs = [];
-  for (const sentence of sentences.filter(Boolean)) {
-    const last = paragraphs[paragraphs.length - 1];
-    if (last && last.length < 110) paragraphs[paragraphs.length - 1] += sentence;
-    else paragraphs.push(sentence);
-  }
-  return paragraphs.map(paragraph => "<p>" + format(paragraph) + "</p>").join("");
-}
-
-function button(route, label, variant = "") {
-  return '<a class="button ' + variant + '" href="#' + route + '">' + format(label) + "</a>";
-}
-
-function header(title, description, back = "") {
-  return '<header class="page-head">' + back + "<h1>" + format(title) + "</h1><p class=\"muted\">" +
-    format(description) + "</p></header>";
-}
-
-function lessonLinks(chapter, active = "") {
-  return '<div class="side-list">' + lessons.filter(item => item.id[0] === chapter).map(item =>
-    '<a class="side-link" href="#lesson/' + item.id + '"' + (item.id === active ? ' aria-current="page"' : "") +
-    '><span class="number">' + item.id + "</span><span>" + escape(item.title) + "</span>" +
-    (state.lessons[item.id]?.passed ? '<span class="side-count" aria-label="测验通过">✓</span>' : "") + "</a>"
-  ).join("") + "</div>";
-}
-
-function drawSidebar(active = "") {
-  sidebar.innerHTML = '<p class="side-label">课程目录</p>' + Object.entries(chapters).map(([id, title]) =>
-    '<details class="side-group" open><summary>第' + (id === "2" ? "二" : "三") + "章 · " + title + "</summary>" +
-    lessonLinks(id, active) + "</details>"
-  ).join("");
-}
-
-function questionLinks(items, empty = "没有符合条件的题目。") {
-  if (!items.length) return '<p class="muted">' + empty + "</p>";
-  return '<ul class="list">' + items.map(item => {
-    const status = state.questions[item.id]?.status;
-    return '<li><a href="#question/' + item.id + '"><span>' + format(item.title) + "<small>" + escape(item.source) +
-      " · 对应 " + item.section + "</small></span>" + (status
-        ? '<span class="status ' + (status === "已掌握" ? "" : "retry") + '">' + escape(status) + "</span>"
-        : '<span aria-hidden="true">→</span>') + "</a></li>";
-  }).join("") + "</ul>";
-}
-
-function home() {
-  const passed = lessons.filter(item => state.lessons[item.id]?.passed).length;
-  return '<section class="hero"><div><span class="tag">第二、三章复习</span><h1>量子力学</h1>' +
-    '<p>从看懂波函数开始，一步步学会推公式、做作业和写期中题。</p><div class="actions">' +
-    button(state.last || "lesson/2.1", state.last ? "继续上次学习" : "从第一节开始", "primary") +
-    button("bank", "浏览作业与期中", "secondary") + '</div></div><div class="formula-board">' +
-    format("$i\\hbar\\frac{\\partial\\Psi}{\\partial t}=\\hat H\\Psi$") +
-    "<p>波函数如何随时间变化</p></div></section>" +
-    '<section class="section"><div class="section-head"><h2>课程目录</h2><span class="muted">' + passed +
-    ' / 16 节测验通过</span></div><progress class="progress" aria-label="课程测验通过进度" max="16" value="' +
-    passed + '"></progress><div class="chapter-grid section">' + Object.entries(chapters).map(([id, title]) =>
-      '<section class="card chapter-card"><header><h3>第' + (id === "2" ? "二" : "三") + "章 · " + title +
-      "</h3></header>" + lessonLinks(id) + "</section>"
-    ).join("") + "</div></section>";
-}
-
-function reveal(label, body) {
-  return '<details class="reveal"><summary>' + label + "</summary><p>" + format(body) + "</p></details>";
-}
-
-function lessonPage(item) {
-  const { id, title, subtitle, fields } = item;
-  const previous = state.lessons[id] ?? {};
-  const quiz = fieldsOutsideMath(fields["测验"]);
-  const practice = fieldsOutsideMath(fields["练习"]);
-  const index = lessons.indexOf(item);
-  const related = questions.filter(question => question.section === id);
-  const parts = [["基础", "前置知识"], ["概念", "概念讲解"], ["推导", "分步推导"], ["例题", "例题演示"]];
-  const cards = parts.map(([name, label]) => {
-    const value = fields[name];
-    const separator = value.indexOf("|");
-    return '<section class="card ' + (name === "例题" ? "example" : "") + '"><span class="eyebrow">' + label +
-      "</span><h2>" + format(value.slice(0, separator)) + "</h2>" + explanation(value.slice(separator + 1)) + "</section>";
-  }).join("");
-  const choices = quiz.slice(1, 4).map((choice, i) =>
-    '<label><input type="radio" name="choice" value="' + i + '"' + (previous.choice === i ? " checked" : "") +
-    " required><span>" + format(choice) + "</span></label>"
-  ).join("");
-  const feedback = previous.passed ? "答对了。" + quiz[5] : previous.wrong ? "这次答错了，已加入错题回顾。" : "";
-  const source = id.startsWith("2.") ? "《2波函数与薛定谔方程.pptx》" : "《第三章  量子力学中的力学量.pptx》";
-  return header(id + " " + title, subtitle, '<p class="breadcrumb"><a href="#home">学习首页</a> / 第' +
-    (id[0] === "2" ? "二" : "三") + "章</p>") + '<div class="reader">' + cards +
-    '<section class="card practice"><span class="eyebrow">独立练习 · 站内自编</span><h2>' + format(practice[0]) +
-    "</h2><p>" + format(practice[1]) + "</p>" + reveal("看提示", practice[2]) + reveal("核对解答", practice[3]) + "</section>" +
-    '<section class="card" id="quiz"><h2>本节小测</h2><p class="source">来源　站内自编，依据本节课件</p>' +
-    '<form id="quiz-form"><fieldset style="border:0;padding:0;margin:0;min-width:0"><legend>' + format(quiz[0]) +
-    '</legend><div class="quiz-options">' + choices + '</div></fieldset><button class="button primary">提交答案</button></form>' +
-    '<p class="feedback' + (previous.wrong ? " retry" : "") + '" id="quiz-feedback" aria-live="polite">' +
-    format(feedback) + "</p></section>" +
-    (related.length ? '<section class="card"><h2>对应作业与期中题</h2>' + questionLinks(related) + "</section>" : "") +
-    '<p class="source">课节来源　' + source + "。本节例题、练习和小测为站内自编或教学改写。</p>" +
-    '<div class="lesson-footer">' + (index ? button("lesson/" + lessons[index - 1].id, "← 上一节") : button("home", "← 课程目录")) +
-    (index + 1 < lessons.length ? button("lesson/" + lessons[index + 1].id, "下一节 →", "primary") : button("bank", "进入题库 →", "primary")) +
-    "</div></div>";
-}
-
-function bank() {
-  const sources = [...new Set(questions.map(item => item.source))].sort((a, b) => a.localeCompare(b, "zh"));
-  return header("作业与期中", "按章节、作业批次或试卷筛选。每题都标有来源，可以直接回到相关课节。") +
-    '<div class="card filterbar"><label>搜索题目<input id="query" type="search" placeholder="题号、知识点或题干" value="' +
-    escape(filters.query) + '"></label><label>章节<select id="chapter"><option value="">全部章节</option>' +
-    Object.keys(chapters).map(id => '<option value="' + id + '"' + (filters.chapter === id ? " selected" : "") +
-      ">第" + (id === "2" ? "二" : "三") + "章</option>").join("") +
-    '</select></label><label>题目来源<select id="source"><option value="">全部来源</option>' + sources.map(source =>
-      '<option value="' + escape(source) + '"' + (filters.source === source ? " selected" : "") + ">" + escape(source) + "</option>"
-    ).join("") + '</select></label></div><p class="muted" id="bank-count" aria-live="polite"></p><div id="bank-results"></div>' +
-    '<details class="reveal"><summary>来源核对说明</summary><p>原题号按各份材料保留。第三章教材题和算符题组各用自己的编号。回忆卷可能与原卷有出入，缺失或含混条件在题页注明。往年文件夹内 2020 年 5 月光电 A 卷未标为期中，本题库采用应物期中卷及回忆卷中涉及两章的题。</p></details>';
-}
-
-const steps = [["切入", "切入提示"], ["列式", "列式提示"], ["步骤", "详细解析"], ["考场", "考场写法"]];
-
-function questionPage(item) {
-  const { id, section, title, source, fields } = item;
-  const entry = state.questions[id] ?? {};
-  return header(title, source, '<p class="breadcrumb"><a href="#bank">作业与期中</a></p>') +
-    '<div class="reader"><section class="card"><h2>题目</h2><p>' + format(fields["题干"]) + '</p><div class="source"><strong>题源</strong><ul>' +
-    citations(id).map(source => "<li>" + escape(source) + "</li>").join("") +
-    '</ul></div><div class="actions section">' + button("lesson/" + section, "补基础 · " + section + " " + lessonMap.get(section).title) +
-    '</div></section><section class="card practice"><h2>先自己做</h2><div class="notes"><label for="notes">作答草稿</label>' +
-    '<textarea id="notes" placeholder="写下已知条件、打算用的公式，或卡住的那一步。">' + escape(entry.note) +
-    '</textarea><p class="source" id="save-status" aria-live="polite">' + (storageAvailable ? "草稿保存在当前浏览器。" : "浏览器存储不可用。") +
-    "</p></div>" + steps.map(([name, label], index) => '<section hidden class="step" data-step="' + index + '"><h3>' + label +
-      "</h3>" + explanation(fields[name]) + "</section>").join("") +
-    '<button type="button" id="next-step" class="button primary">展开切入提示</button></section><section class="card">' +
-    '<h2>记录掌握情况</h2><div class="actions">' + ["已掌握", "待复习", "错题"].map(status =>
-      '<button type="button" class="button ' + (entry.status === status ? "primary" : "") + '" data-status="' + status +
-      '" aria-pressed="' + (entry.status === status) + '">' + status + "</button>"
-    ).join("") + '</div><p class="feedback" id="mark-feedback" aria-live="polite"></p></section></div>';
-}
-
-function review() {
-  const passed = lessons.filter(item => state.lessons[item.id]?.passed).length;
-  const mistakes = lessons.filter(item => state.lessons[item.id]?.wrong);
-  const marked = questions.filter(item => state.questions[item.id]?.status);
-  const mastered = marked.filter(item => state.questions[item.id].status === "已掌握");
-  const pending = marked.filter(item => state.questions[item.id].status !== "已掌握");
-  return header("错题与进度", storageAvailable ? "学习记录保存在当前浏览器。点击题目即可重做。" : "浏览器存储不可用，记录仅在当前会话保留。") +
-    '<div class="card metrics"><div class="metric"><strong>' + passed + ' / 16</strong><span>课节小测通过</span></div>' +
-    '<div class="metric"><strong>' + mastered.length + '</strong><span>已掌握题目</span></div>' +
-    '<div class="metric"><strong>' + (pending.length + mistakes.length) + "</strong><span>待复习</span></div></div>" +
-    '<section class="section"><h2>作业和期中错题</h2>' + questionLinks(pending, "暂无待复习题。") + "</section>" +
-    '<section class="section"><h2>课节小测错题</h2>' + (mistakes.length ? '<ul class="list">' + mistakes.map(item =>
-      '<li><a href="#lesson/' + item.id + '/quiz"><span>' + item.id + " " + escape(item.title) +
-      "</span><span>重做 →</span></a></li>").join("") + "</ul>" : '<p class="muted">暂无小测错题。</p>') + "</section>" +
-    '<section class="section"><h2>已掌握的题目</h2>' + questionLinks(mastered, "暂无标记。") + "</section>";
-}
-
-function bindBank() {
-  function update() {
-    const query = filters.query.trim().toLowerCase();
-    const items = questions.filter(item =>
-      (!filters.chapter || item.section[0] === filters.chapter) &&
-      (!filters.source || item.source === filters.source) &&
-      (!query || [item.title, item.source, item.section, item.fields["题干"], ...citations(item.id)]
-        .some(value => value.toLowerCase().includes(query)))
-    );
-    document.querySelector("#bank-count").textContent = "找到 " + items.length + " 道题";
-    document.querySelector("#bank-results").innerHTML = questionLinks(items);
-  }
-  for (const filter of Object.keys(filters)) {
-    document.getElementById(filter).addEventListener(filter === "query" ? "input" : "change", event => {
-      filters[filter] = event.target.value;
-      update();
-    });
-  }
-  update();
-}
-
-function bindLesson(item) {
-  document.querySelector("#quiz-form").addEventListener("submit", event => {
-    event.preventDefault();
-    const answer = new FormData(event.target).get("choice");
-    if (answer === null) return;
-    const choice = Number(answer);
-    const quiz = fieldsOutsideMath(item.fields["测验"]);
-    const passed = choice === Number(quiz[4]);
-    state.lessons[item.id] = { choice, passed, wrong: !passed };
-    const persisted = save();
-    const feedback = document.querySelector("#quiz-feedback");
-    feedback.classList.toggle("retry", !passed);
-    feedback.innerHTML = format((passed ? "答对了。" + quiz[5] : "这次答错了，已加入错题回顾。") +
-      (persisted ? "" : " 当前浏览器未能保存。"));
-    drawSidebar(item.id);
-  });
-}
-
-function bindQuestion(item) {
-  const next = document.querySelector("#next-step");
-  let index = 0;
-  next.addEventListener("click", () => {
-    const panel = document.querySelector('[data-step="' + index + '"]');
-    panel.hidden = false;
-    index += 1;
-    next.hidden = index === steps.length;
-    if (!next.hidden) next.textContent = "展开" + steps[index][1];
-    panel.tabIndex = -1;
-    panel.focus();
-  });
-  const entry = () => state.questions[item.id] ?? (state.questions[item.id] = {});
-  document.querySelector("#notes").addEventListener("input", event => {
-    entry().note = event.target.value;
-    document.querySelector("#save-status").textContent = save() ? "草稿已保存。" : "浏览器存储不可用。";
-  });
-  const marks = [...document.querySelectorAll("[data-status]")];
-  for (const mark of marks) {
-    mark.addEventListener("click", () => {
-      entry().status = mark.dataset.status;
-      const persisted = save();
-      for (const other of marks) {
-        other.classList.toggle("primary", other === mark);
-        other.setAttribute("aria-pressed", String(other === mark));
-      }
-      document.querySelector("#mark-feedback").textContent =
-        "已标记为" + mark.dataset.status + "。" + (persisted ? "" : " 当前浏览器未能保存。");
-    });
-  }
-}
-
-function render() {
-  const [route, id, target] = location.hash.slice(1).split("/");
-  const item = route === "lesson" ? lessonMap.get(id) : route === "question" ? questionMap.get(id) : null;
-  const nav = route === "question" ? "bank" : route === "lesson" || !route ? "home" : route;
-  for (const tab of document.querySelectorAll("[data-nav]")) {
-    if (tab.dataset.nav === nav) tab.setAttribute("aria-current", "page");
-    else tab.removeAttribute("aria-current");
-  }
-  if (item) {
-    state.last = route + "/" + id;
-    save();
-  }
-  drawSidebar(item ? (item.section ?? item.id) : "");
-  if (route === "lesson" && item) {
-    main.innerHTML = lessonPage(item);
-    bindLesson(item);
-  } else if (route === "question" && item) {
-    main.innerHTML = questionPage(item);
-    bindQuestion(item);
-  } else if (route === "bank") {
-    main.innerHTML = bank();
-    bindBank();
-  } else if (route === "review") {
-    main.innerHTML = review();
-  } else {
-    main.innerHTML = home();
-  }
-  document.title = "量子力学第二、三章";
-  if (target === "quiz") document.querySelector("#quiz")?.scrollIntoView();
-  else window.scrollTo(0, 0);
-}
-
-window.addEventListener("hashchange", () => {
-  if (location.hash !== "#main") render();
-  main.focus({ preventScroll: true });
-});
+$$('.nav-btn').forEach(b=>b.onclick=()=>setHash('#'+b.dataset.view));$('#courseRail').onclick=e=>{const b=e.target.closest('[data-course]');if(b)setHash('#learn/'+b.dataset.course)};
+$('#globalSearch').onkeydown=e=>{if(e.key==='Enter'){bankFilter.search=e.target.value;setHash('#bank')}};
+$('#themeBtn').onclick=()=>{const dark=document.documentElement.dataset.theme==='dark';document.documentElement.dataset.theme=dark?'':'dark';localStorage.setItem('review-theme',dark?'light':'dark')};if(localStorage.getItem('review-theme')==='dark')document.documentElement.dataset.theme='dark';
+$('#backupBtn').onclick=()=>{const blob=new Blob([JSON.stringify(progress,null,2)],{type:'application/json'}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='课程复习记录.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),500)};
+window.addEventListener('hashchange',render);document.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();$('#globalSearch').focus()}if(e.key==='Escape'&&window.practice)closePractice()});
 render();
