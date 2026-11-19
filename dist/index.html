@@ -1,35 +1,36 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light">
-  <title>量子力学 · 第二、三章</title>
-  <link rel="stylesheet" href="math/katex.min.css">
-  <link rel="stylesheet" href="styles.css">
-  <script defer src="math/katex.min.js"></script>
-  <script defer src="lessons.js"></script>
-  <script defer src="observables.js"></script>
-  <script defer src="homework.js"></script>
-  <script defer src="exams.js"></script>
-  <script defer src="app.js"></script>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>课程复习工作台 · 2026—2027-1</title>
+<meta name="description" content="六门课程的知识卡、主动回忆、题库、错题本与内置思维导图">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <a class="skip" href="#main">跳到主要内容</a>
-  <header class="topbar">
-    <div class="top-inner">
-      <a class="brand" href="#home"><span class="brand-symbol" aria-hidden="true">ψ</span><span>量子力学<small>第二、三章</small></span></a>
-      <nav aria-label="主导航">
-        <a href="#home" data-nav="home">学习首页</a>
-        <a href="#bank" data-nav="bank">作业与期中</a>
-        <a href="#review" data-nav="review">错题与进度</a>
-      </nav>
-    </div>
-  </header>
-  <div class="shell">
-    <aside class="sidebar" aria-label="章节目录" id="sidebar"></aside>
-    <main id="main" tabindex="-1"></main>
-  </div>
-  <noscript>请启用 JavaScript 以使用课程、分步练习和进度记录。</noscript>
+<header class="topbar">
+  <a class="brand" href="#home"><span class="brand-mark">⌘</span><span><b>课程复习工作台</b><small>REVIEW CONSOLE · 2026—2027-1</small></span></a>
+  <nav class="nav" aria-label="主导航">
+    <button data-view="home" class="nav-btn active">总览</button>
+    <button data-view="learn" class="nav-btn">知识卡</button>
+    <button data-view="bank" class="nav-btn">题库</button>
+    <button data-view="maps" class="nav-btn">知识地图</button>
+    <button data-view="mistakes" class="nav-btn">错题本 <em id="mistakeBadge">0</em></button>
+    <button data-view="english" class="nav-btn">英语工作台</button>
+  </nav>
+  <div class="top-tools"><label class="global-search"><span>⌕</span><input id="globalSearch" placeholder="搜索知识点或题目" aria-label="搜索知识点或题目"><kbd>⌘K</kbd></label><button id="themeBtn" class="icon-btn" title="切换主题">◐</button><button id="backupBtn" class="icon-btn" title="导出学习记录">⇩</button></div>
+</header>
+<div class="app-shell">
+  <aside class="rail">
+    <div class="rail-title">我的学习空间</div>
+    <div class="rail-stats"><span id="readCount">0</span><small>章已读</small><span id="masteredCount">0</span><small>题已掌握</small></div>
+    <div class="rail-section"><div class="rail-label">课程筛选</div><div id="courseRail"></div></div>
+    <div class="rail-tip"><span class="eyebrow">学习主线</span><strong>理解 → 回忆 → 练习</strong><p>开卷课记住查找路径，闭卷课把公式放进题目。</p></div>
+    <div class="rail-foot"><span class="status-dot"></span>记录保存在此浏览器</div>
+  </aside>
+  <main id="app" tabindex="-1"></main>
+</div>
+<footer><span>课程复习工作台 · 近代物理实验按要求排除</span><a id="indexOpen" href="#" target="_blank">课程内容已内置于网站</a></footer>
+<dialog id="practiceDialog" aria-labelledby="practiceTitle"></dialog>
+<script src="data.js"></script><script src="app.js"></script>
 </body>
 </html>
