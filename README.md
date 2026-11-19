@@ -1,6 +1,12 @@
 # 课程复习工作台
 
-这是一个可直接打开的静态课程复习网站，部署在 GitHub Pages 的 `dist/` 目录。
+直接打开在线版：
+
+https://cdn.jsdelivr.net/gh/craftbucket/quantum-mechanics-review-2@main/dist/index.html
+
+源代码仓库：
+
+https://github.com/craftbucket/quantum-mechanics-review-2
 
 网站内置：
 
@@ -9,4 +15,4 @@
 - 六门课的交互式知识地图；
 - 浏览器本地保存的掌握状态、错题、收藏和解题笔记。
 
-直接打开 GitHub Pages 地址即可使用，不依赖本地服务器、PDF 转图或本地缓存。英语学习站仍保留在原资料目录的 `07_英语/学习站/`。
+网站是纯静态页面，不依赖本地服务器、PDF 转图或本地缓存。英语学习站仍保留在原资料目录的 `07_英语/学习站/`。
