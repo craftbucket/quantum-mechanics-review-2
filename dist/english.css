@@ -1,0 +1,15 @@
+.english-workspace{max-width:760px;margin:0 auto;padding:24px}
+.english-workspace h1{margin:12px 0 16px;font-size:clamp(26px,4vw,38px)}
+.english-nav,.english-controls{display:flex;flex-wrap:wrap;gap:8px}
+.english-nav{margin-bottom:16px}
+.english-nav [aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:#fff}
+.english-panel h2{margin:0 0 12px}
+.english-panel label{display:block}
+.english-panel input[type=search],.english-panel textarea{width:100%;margin:4px 0 8px;padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+.english-panel .english-toggle{display:flex;align-items:center;gap:6px}
+.english-prompt{font-size:1.25rem;font-weight:650;overflow-wrap:anywhere}
+#word{font-size:clamp(26px,6vw,52px);margin:16px 0;min-height:1.2em}
+.english-controls{margin-top:16px}
+.english-timer{font-size:2rem;font-variant-numeric:tabular-nums}
+.english-page[hidden],.english-panel[hidden],#review-home[hidden]{display:none}
+@media(max-width:480px){.english-workspace{padding:14px}}

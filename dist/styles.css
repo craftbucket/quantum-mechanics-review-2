@@ -4,3 +4,12 @@
 @media(max-width:1080px){.topbar{flex-wrap:wrap;gap:12px}.nav{order:3;width:100%}.top-tools{margin-left:auto}.course-grid{grid-template-columns:repeat(2,1fr)}.chapter-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:760px){.app-shell{display:block}.rail{position:static;min-height:0;border-right:0;border-bottom:1px solid var(--line);padding:14px 18px}.rail-section,.rail-tip,.rail-foot{display:none}.rail-stats{display:flex;align-items:center;gap:7px;margin:0}.rail-stats span{font-size:19px}.rail-stats small{margin-right:10px}.global-search{order:2;flex:1}.global-search input{width:100%}.hero,.task-grid,.learn-layout,.map-layout{grid-template-columns:1fr}.hero-map{min-height:220px}.stats{grid-template-columns:repeat(2,1fr)}.course-grid,.chapter-grid{grid-template-columns:1fr}.map-tabs{display:flex;overflow:auto}.map-tab{min-width:145px}.map-nodes{grid-template-columns:1fr}.map-node.core{grid-column:auto}.question-card{grid-template-columns:30px 1fr}.q-actions{grid-column:2;justify-content:flex-start}.page-top{display:block}.page-top .button{margin-top:12px}main{padding:25px 15px 50px}}
 .resource-panel{margin-top:18px}.resource-panel h3{margin-bottom:4px}.resource-links{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+
+.lookup-list{margin:14px 0 0;display:grid;gap:0}
+.lookup-list div{padding:10px 0;border-top:1px solid var(--line)}
+.lookup-list dt{font-weight:650}
+.lookup-list dd{margin:3px 0 0;color:var(--muted);overflow-wrap:anywhere}
+button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.english-shell iframe{min-height:650px}
+.formula{overflow-x:auto}
+.formula .katex-display{margin:.25em 0}

@@ -1,1 +1,66 @@
-<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>英语学习站</title><style>body{font:16px/1.7 system-ui,sans-serif;background:#f4f6f8;color:#19242c;padding:40px}main{max-width:720px;margin:auto;background:white;border:1px solid #d9e1e5;border-radius:16px;padding:28px}</style><main><p>ENGLISH WORKBENCH</p><h1>英语学习站保留在本地资料库</h1><p>在线复习站的专业课程已经内置。英语刷题、听力、词汇、翻译和批注继续使用本地的 <code>07_英语/学习站</code>。</p></main>
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>英语学习站 · 课程复习</title>
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./english.css">
+  <script defer src="./english-words.js"></script>
+  <script defer src="./english.js"></script>
+</head>
+<body class="english-page">
+  <main class="english-workspace">
+    <a id="review-home" href="./index.html#english">返回课程复习</a>
+    <h1>英语学习站</h1>
+    <nav class="english-nav" aria-label="英语练习">
+      <button class="button secondary" type="button" data-panel="words" aria-pressed="true">词汇</button>
+      <button class="button secondary" type="button" data-panel="translation" aria-pressed="false">翻译</button>
+      <button class="button secondary" type="button" data-panel="speaking" aria-pressed="false">口语</button>
+    </nav>
+    <section class="panel english-panel" id="words">
+      <h2>词汇卡</h2>
+      <label for="word-filter">查找单词</label>
+      <input id="word-filter" type="search" placeholder="输入单词或词根">
+      <label class="english-toggle"><input id="unmastered" type="checkbox"> 只看未掌握</label>
+      <p class="muted" id="word-status" role="status"></p>
+      <p id="word" class="english-prompt" lang="en"></p>
+      <div class="english-controls">
+        <button class="button secondary" id="previous-word">上一词</button>
+        <button class="button primary" id="word-known">标记为已掌握</button>
+        <button class="button secondary" id="next-word">下一词</button>
+        <button class="button ghost" id="read-word">读单词</button>
+      </div>
+    </section>
+    <section class="panel english-panel" id="translation" hidden>
+      <h2>中译英</h2>
+      <p class="muted" id="translation-status"></p>
+      <p id="translation-prompt" class="english-prompt"></p>
+      <label for="translation-draft">我的译文</label>
+      <textarea id="translation-draft" placeholder="先完成自己的翻译，再展开参考译文。" rows="4" spellcheck="true" lang="en"></textarea>
+      <details id="translation-details" class="recall-box">
+        <summary>参考译文</summary>
+        <p class="answer" id="translation-answer" lang="en"></p>
+      </details>
+      <div class="english-controls">
+        <button class="button secondary" id="previous-translation">上一题</button>
+        <button class="button primary" id="next-translation">下一题</button>
+      </div>
+    </section>
+    <section class="panel english-panel" id="speaking" hidden>
+      <h2>45 秒口语</h2>
+      <p class="muted" id="speaking-status"></p>
+      <p id="speaking-prompt" class="english-prompt" lang="en"></p>
+      <p class="muted">先给出观点，再补一个具体例子和它带来的结果。</p>
+      <output class="english-timer" id="speaking-timer" aria-label="剩余秒数">45</output>
+      <p id="speaking-feedback" role="status"></p>
+      <div class="english-controls">
+        <button class="button primary" id="start-speaking">开始计时</button>
+        <button class="button secondary" id="reset-speaking">重置计时</button>
+        <button class="button ghost" id="next-speaking">下一题</button>
+      </div>
+    </section>
+    <p class="muted">词汇掌握状态保存在当前浏览器。原卷、听力材料和已有批注可继续使用本地英语站查看。</p>
+  </main>
+</body>
+</html>

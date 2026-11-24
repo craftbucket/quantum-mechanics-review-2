@@ -4,7 +4,8 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>课程复习工作台 · 2026—2027-1</title>
 <meta name="description" content="六门课程的知识卡、主动回忆、题库、错题本与内置思维导图">
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="math/katex.min.css">
 </head>
 <body>
 <header class="topbar">
@@ -29,8 +30,9 @@
   </aside>
   <main id="app" tabindex="-1"></main>
 </div>
-<footer><span>课程复习工作台 · 近代物理实验按要求排除</span><a id="indexOpen" href="#" target="_blank">课程内容已内置于网站</a></footer>
+<footer><span>课程复习工作台 · 近代物理实验按要求排除</span><span>进度保存在当前浏览器</span></footer>
 <dialog id="practiceDialog" aria-labelledby="practiceTitle"></dialog>
-<script src="data.js"></script><script src="app.js"></script>
+<script src="math/katex.min.js"></script>
+<script src="data.js"></script><script src="resources.js"></script><script src="app.js"></script>
 </body>
 </html>
